@@ -22,52 +22,59 @@ import { useState, useSyncExternalStore } from "react";
  * @returns
  */
 export default function Game() {
-  // 盤の履歴 初期状態を定義。
+  // 盤の履歴。
   const [history, setHistory] = useState([Array(9).fill(null)]);
 
-  // currentMove：今、何手目か。
+  // 何手目を打ち終わった状態か。
   const [currentMove, setCurrentMove] = useState(0);
+
+  // 今から打つのは×である。
   const xIsNext = currentMove % 2 === 0;
 
-  // 最新履歴の盤の状態を取得。
+  // 最新履歴の盤の状態。
   const currentSquares = history[currentMove];
 
-  // historyに対してreverseをかけるかどうか。
+  // 手順の履歴ボタンを降順に表示するか。
   const [isExecuteReberse, setIsExecuteReverse] = useState(false);
 
-  const [movesAAA, setMovesAAA] = useState(
-    createMoves([Array(9).fill(null)], 0, isExecuteReberse)
+  // 手順の履歴ボタンの配列。
+  const [moves, setMoves] = useState(
+    createMoves([Array(9).fill(null)], isExecuteReberse)
   );
 
   /**
    *
    */
   function handlePlay(nextSquares) {
+    // 盤の履歴に、打った盤の状態を追加する。
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length - 1);
-
-    const moves = createMoves(
-      nextHistory,
-      nextHistory.length - 1,
-      isExecuteReberse
-    );
-    setMovesAAA(moves);
+    const moves = createMoves(nextHistory, isExecuteReberse);
+    setMoves(moves);
   }
 
   /**
-   * ○手目ボzタンを押した時に、○手目を表示する。また、次がXかOかもそれに合わせる。
+   * 手順の履歴ボタン押した時に、○手目を表示する。
    */
-  function jumpTo(_nextMove, _isExecuteReberse) {
+  function jumpTo(_nextMove) {
     setCurrentMove(_nextMove);
-    // const moves = createMoves(history, _nextMove, _isExecuteReberse);
-    // setMovesAAA(moves);
   }
 
-  function createMoves(_history, _currentMove, _isExecuteReberse) {
-    /**
-     * 手順の履歴ボタンを作成し、<li>タグの配列で返す。
-     */
+  /**
+   * 手順の履歴ボタンを作成する。
+   * （でたらめにやって関数に変えてみたりしたが、別に関数かしなくてもいける気がする）
+   * @param {*} _history
+   * @param {*} _isMovesReverse
+   * 手順の履歴ボタンの並び順を、降順にする必要があるかを示す。
+   * true  並び順を降順にしたいため、逆転する必要がある。
+   * false 並び順を昇順にしたいため、逆転する必要はない。
+   * 通常時は、isExecuteReberseをそのまま渡してもらう。
+   * ソートボタン押下時のみ、反転させたisExecuteReberseを渡してもらう。
+   * @returns
+   */
+  function createMoves(_history, _isMovesReverse) {
+    // 手順の履歴ボタンを作成し、<li>タグの配列で返す。
     let moves = [];
     moves = _history.map((squares, move) => {
       // ボタンに表示する文字列を組み立てる。
@@ -83,39 +90,32 @@ export default function Game() {
       // 組み立てた文字列をのボタンを、リストで設置する。
       return (
         <li key={move}>
-          <button onClick={() => jumpTo(move, _isExecuteReberse)}>
-            {description}
-          </button>
+          <button onClick={() => jumpTo(move)}>{description}</button>
         </li>
       );
     });
 
-    // if (!calculateWinner(_history[_currentMove])) {
-    //   moves.push("you are move#" + (_currentMove + 1));
-    // } else {
-    //   moves.push("Game end");
-    // }
-
-    let newMoves = [];
-    if (_isExecuteReberse == true) {
-      newMoves = moves.toReversed();
+    // 手順の履歴ボタンの配列の並び順を変更する。
+    let sortedMoves = [];
+    if (_isMovesReverse == true) {
+      sortedMoves = moves.toReversed();
     } else {
-      newMoves = moves;
+      sortedMoves = moves;
     }
 
-    return newMoves;
+    return sortedMoves;
   }
 
   /**
    * ソートボタン押下時に手順の履歴を昇降逆順する。
    */
-  function handleSortMoves(_isExecuteReberse) {
-    const newIsExecuteReverse = !_isExecuteReberse;
-    setIsExecuteReverse(newIsExecuteReverse);
-    const moves = createMoves(history, currentMove, newIsExecuteReverse);
-    setMovesAAA(moves);
+  function handleSortMoves() {
+    setIsExecuteReverse((isExecuteReberse) => !isExecuteReberse);
+    const newMoves = createMoves(history, !isExecuteReberse);
+    setMoves(newMoves);
   }
 
+  // 次が何手目かを表示する文言を組み立てる。
   let nextMoveNoMessage = "";
   if (!calculateWinner(history[currentMove])) {
     nextMoveNoMessage = "you are move#" + (currentMove + 1);
@@ -123,6 +123,7 @@ export default function Game() {
     nextMoveNoMessage = "Game end";
   }
 
+  // ソートボタンに表示する文言を組み立てる。
   let sortButtonValue = "";
   if (isExecuteReberse) {
     sortButtonValue = "昇順に並べ替える";
@@ -141,14 +142,12 @@ export default function Game() {
       </div>
       {/* 手順の履歴のボタン。 */}
       <div className="game-info">
-        <ol>{movesAAA}</ol>
+        <ol>{moves}</ol>
         {nextMoveNoMessage}
       </div>
       {/* 手順の履歴を並べ替えるボタン。 */}
       <div>
-        <button onClick={() => handleSortMoves(isExecuteReberse)}>
-          {sortButtonValue}
-        </button>
+        <button onClick={() => handleSortMoves()}>{sortButtonValue}</button>
       </div>
     </div>
   );
@@ -240,12 +239,14 @@ function Square({ value, onSquareClick }) {
 }
 
 /** *********************************************************************
- * 今時点で、どちらかが勝っていれば、勝っている方の×か○かの文字列を返す。
+ * 勝敗判定
+ * 受け取った盤の勝敗判定を行い、どちらかが勝っていれば、勝っている方の×か○かの文字列を返す。
  * どちらも勝っていなければ、nullを返す。
  * @param {*} squares
  * @returns
  */
 function calculateWinner(squares) {
+  // 勝ちパターンの定義。
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
@@ -257,6 +258,7 @@ function calculateWinner(squares) {
     [2, 4, 6],
   ];
 
+  // 受け取った盤の状態が、勝ちパターンのいずれかに当てはまっている場合は、勝っている方の×か○かの文字列を返す
   for (let i = 0; i < lines.length; i++) {
     const [a, b, c] = lines[i];
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
