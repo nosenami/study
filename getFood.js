@@ -41,8 +41,11 @@ const otya = "お茶";
 const kyabetu = "キャベツ";
 const imo = "いも";
 const daikon = "だいこん";
-const reitouUdon = "冷凍うどん";
+const reitouUdon = "カトキチ";
 const tamago = "たまご";
+const nattou = "納豆";
+const tomato = "トマト";
+const ringo = "りんご";
 
 module.exports = {
   getFood,
